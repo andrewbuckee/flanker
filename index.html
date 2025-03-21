@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Flanker Task</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsPsych/7.3.3/jspsych.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsPsych/7.3.3/plugins/jspsych-html-keyboard-response.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jsPsych/7.3.3/jspsych.css">
+</head>
+<body>
+    <script>
+        var jsPsych = initJsPsych({
+            on_finish: function() {
+                var accuracy = jsPsych.data.get().filter({correct: true}).count() / jsPsych.data.get().count();
+                var reactionTime = jsPsych.data.get().select('rt').mean();
+                
+                // Redirect back to Qualtrics with data
+                window.location.href = "https://yourqualtricssurvey.com?flankerScore=" + Math.round(accuracy * 100) + "&reactionTime=" + Math.round(reactionTime);
+            }
+        });
+
+        var timeline = [];
+
+        var fixation = {
+            type: jsPsychHtmlKeyboardResponse,
+            stimulus: "+",
+            choices: "NO_KEYS",
+            trial_duration: 500
+        };
+
+        var flanker_trial = {
+            type: jsPsychHtmlKeyboardResponse,
+            stimulus: function() {
+                var arrows = ["<<<<<", ">>>>>", "<<><<", ">><>>"]; // Congruent & Incongruent Trials
+                return jsPsych.randomization.sampleWithoutReplacement(arrows, 1)[0];
+            },
+            choices: ['ArrowLeft', 'ArrowRight'],
+            data: function() {
+                var stim = jsPsych.timelineVariable('stimulus');
+                return {
+                    correct_response: (stim[2] == '<') ? 'ArrowLeft' : 'ArrowRight'
+                };
+            },
+            on_finish: function(data) {
+                data.correct = data.response == data.correct_response;
+            }
+        };
+
+        var trials = {
+            timeline: [fixation, flanker_trial],
+            repetitions: 10 // Adjust for more trials
+        };
+
+        timeline.push(trials);
+        jsPsych.run(timeline);
+    </script>
+</body>
+</html>
